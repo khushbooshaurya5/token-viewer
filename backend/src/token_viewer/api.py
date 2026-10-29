@@ -65,6 +65,13 @@ class MessageList(RequestBody):
     """The chat messages, as a chat completions API receives them."""
 
 
+class TemplateSwitches(RequestBody):
+    """The argument of set_template_switches."""
+
+    switches: dict[str, bool]
+    """The chat template's switches, e.g. {"enable_thinking": false}."""
+
+
 class CaptureFile(RequestBody):
     """The arguments of load_capture: a capture file the user picked."""
 
@@ -139,6 +146,11 @@ def create_app(controller: Controller) -> FastAPI:
         with one_at_a_time:
             return controller.set_messages(body.messages)
 
+    @app.post("/api/template-switches")
+    def set_template_switches(body: TemplateSwitches) -> ViewModel:
+        with one_at_a_time:
+            return controller.set_template_switches(body.switches)
+
     @app.post("/api/capture")
     def load_capture(body: CaptureFile) -> ViewModel:
         with one_at_a_time:
@@ -153,9 +165,6 @@ def create_app(controller: Controller) -> FastAPI:
     def select(body: Selection) -> ViewModel:
         with one_at_a_time:
             return controller.select_token(body.index)
-
-    # Yours: for each command you add to Controller, a route like these, with
-    # a request class derived from RequestBody, like Selection above.
 
     return app
 

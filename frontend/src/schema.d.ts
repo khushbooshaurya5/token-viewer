@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/template-switches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Template Switches */
+        post: operations["set_template_switches_api_template_switches_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/capture": {
         parameters: {
             query?: never;
@@ -129,9 +146,6 @@ export interface components {
         /**
          * CaptureView
          * @description A captured provider response.
-         *
-         *     A first version with the two texts only. Add the response metadata the
-         *     task asks for.
          */
         CaptureView: {
             /**
@@ -149,6 +163,11 @@ export interface components {
              * @description The reasoning text, or None if the response has none.
              */
             reasoning: string | null;
+            /**
+             * Metadata
+             * @description The response metadata, each piece with its source.
+             */
+            metadata: components["schemas"]["MetadataView"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -184,6 +203,30 @@ export interface components {
              * @description The chat messages, as a chat completions API receives them.
              */
             messages: components["schemas"]["Message"][];
+        };
+        /**
+         * MetadataView
+         * @description One piece of a capture's metadata, with where it comes from.
+         */
+        MetadataView: {
+            /**
+             * Label
+             * @description What the value is, e.g. "Reported model".
+             */
+            label: string;
+            /**
+             * Value
+             * @description The value, as text.
+             */
+            value: string;
+            /**
+             * Source
+             * @description Who says so: request is what the laptop sent, provider what the
+             *     provider's service answered, local what the laptop measured or this
+             *     viewer reconstructed.
+             * @enum {string}
+             */
+            source: "request" | "provider" | "local";
         };
         /**
          * Refusal
@@ -224,6 +267,19 @@ export interface components {
             index: number;
         };
         /**
+         * TemplateSwitches
+         * @description The argument of set_template_switches.
+         */
+        TemplateSwitches: {
+            /**
+             * Switches
+             * @description The chat template's switches, e.g. {"enable_thinking": false}.
+             */
+            switches: {
+                [key: string]: boolean;
+            };
+        };
+        /**
          * TokenView
          * @description One token, as the views show it.
          */
@@ -250,19 +306,49 @@ export interface components {
             text: string;
             /**
              * Start
-             * @description Where the token begins in the text of its view.
+             * @description Where the token begins in the text of its view, in Unicode code points.
+             *
+             *     Code points are the unit of a Python str: text[start:end] is the token's
+             *     span. A token that cuts a character spans that whole character.
              */
             start: number;
             /**
              * End
-             * @description Where the token ends in the text of its view.
+             * @description Where the token ends in the text of its view, in Unicode code points.
              */
             end: number;
             /**
+             * Byte Start
+             * @description Where the token's bytes begin in the UTF-8 encoding of the text.
+             */
+            byte_start: number;
+            /**
+             * Byte End
+             * @description Where the token's bytes end in the UTF-8 encoding of the text.
+             */
+            byte_end: number;
+            /**
+             * Bytes
+             * @description The token's UTF-8 bytes, in hex, e.g. "20 F0 9F".
+             */
+            bytes: string;
+            /**
              * Special
-             * @description Whether the token is a special token.
+             * @description Whether the token is a special token, a marker such as <|im_start|>.
              */
             special: boolean;
+            /**
+             * Added
+             * @description Whether the token is an added token, outside the merge rules.
+             */
+            added: boolean;
+            /**
+             * Partial
+             * @description Whether the token begins or ends inside a character, e.g. an emoji.
+             *
+             *     Its text then shows the bytes of the cut character as ⟨F0 9F⟩.
+             */
+            partial: boolean;
         };
         /**
          * TokenizerView
@@ -321,6 +407,13 @@ export interface components {
              * @description The chat messages, as set_messages received them.
              */
             messages: components["schemas"]["Message"][];
+            /**
+             * Template Switches
+             * @description The chat template's switches, e.g. {"enable_thinking": false}.
+             */
+            template_switches: {
+                [key: string]: boolean;
+            };
             /**
              * Views
              * @description The views select_view can choose from.
@@ -456,6 +549,48 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MessageList"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ViewModel"];
+                };
+            };
+            /** @description Command refused */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refusal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_template_switches_api_template_switches_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemplateSwitches"];
             };
         };
         responses: {

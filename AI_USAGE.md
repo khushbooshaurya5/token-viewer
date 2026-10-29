@@ -8,7 +8,7 @@ Every prompt to a coding agent or a chatbot about this project goes here. Asking
 
 | Date | Tool or model | Prompt, as written | What we took from the answer |
 |---|---|---|---|
-| | | | |
+| 2026-10-29 | Claude (Anthropic), Claude Opus 5.5 | "Can u make it", after explaining that this is a side project, not handed in for a grade | Claude wrote the model, controller, terminal view, tests and README of this repository, and explained each part. |
 
 ## Long prompts
 

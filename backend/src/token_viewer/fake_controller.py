@@ -96,6 +96,7 @@ class _FakeModel:
         self.repository: str = "fake/example"
         self.revision: str = "fake"
         self.messages: list[tuple[str, str]] = [("user", "Show me fake tokens.")]
+        self.template_switches: dict[str, bool] = {}
         self.view: str = "chat"  # The key of the view shown.
         self.selected: int | None = None  # A token's index in that view.
         self.capture_name: str | None = None
@@ -126,6 +127,10 @@ class _FakeModel:
         while its index still names the same token.
         """
         self.messages = messages
+
+    def set_template_switches(self, switches: dict[str, bool]) -> None:
+        """Remember the switches; the tokens stay made up."""
+        self.template_switches = switches
 
     def set_capture(self, name: str) -> None:
         """Remember a capture's name, with a made-up answer."""
@@ -169,8 +174,8 @@ class FakeController(Controller):
 
     def view_model(self) -> ViewModel:
         """Build the view-model from the stand-in model's state."""
-        # Yours: when you add a field to a view-model, give it a made-up value
-        # here too, or the route tests fail.
+        # When you add a field to a view-model, give it a made-up value here
+        # too, or the route tests fail.
         model: _FakeModel = self._model
         tokens: list[TokenView] = [
             TokenView(
@@ -180,7 +185,13 @@ class FakeController(Controller):
                 text=text,
                 start=start,
                 end=end,
+                # Made-up tokens are ASCII: one byte per character.
+                byte_start=start,
+                byte_end=end,
+                bytes=text.encode("utf-8").hex(" ").upper(),
                 special=special,
+                added=special,
+                partial=False,
             )
             for index, (token_id, piece, text, start, end, special) in enumerate(
                 model.tokens()
@@ -189,7 +200,10 @@ class FakeController(Controller):
         capture: CaptureView | None = None
         if model.capture_name is not None:
             capture = CaptureView(
-                name=model.capture_name, answer=model.capture_answer, reasoning=None
+                name=model.capture_name,
+                answer=model.capture_answer,
+                reasoning=None,
+                metadata=[],
             )
         return ViewModel(
             tokenizer=TokenizerView(
@@ -199,6 +213,7 @@ class FakeController(Controller):
             messages=[
                 Message(role=role, content=content) for role, content in model.messages
             ],
+            template_switches=model.template_switches,
             views=[ViewOption(key=key, title=title) for key, title in model.views()],
             current_view=model.view,
             text=model.text(),
@@ -221,6 +236,10 @@ class FakeController(Controller):
             raise CommandError("Give at least one message.")
         pairs: list[tuple[str, str]] = [(m.role, m.content) for m in messages]
         return self._carry_out(lambda: self._model.set_messages(pairs))
+
+    def set_template_switches(self, switches: dict[str, bool]) -> ViewModel:
+        """Show the switches; the tokens stay made up."""
+        return self._carry_out(lambda: self._model.set_template_switches(switches))
 
     def load_capture(self, name: str, content: str) -> ViewModel:
         """Show the file's name with a made-up answer; the content is not read."""

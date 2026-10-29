@@ -5,8 +5,8 @@ the command returns. The controller carries the command out on the model; it
 renders nothing. The FastAPI routes in api.py call these commands for the
 page, and a terminal view can call them directly.
 
-Yours: write your controller as a subclass of Controller, in a module of your
-own in this package, as FakeController does.
+ViewerController in viewer_controller.py is the real one, on the model in
+model.py; FakeController keeps the route tests offline.
 
 Python refuses to create a controller while a command is missing, and names
 the command; mypy reports it too.
@@ -46,6 +46,16 @@ class Controller(ABC):
     @abstractmethod
     def set_messages(self, messages: list[Message]) -> ViewModel:
         """Replace the chat messages whose tokens the views show."""
+        ...
+
+    @abstractmethod
+    def set_template_switches(self, switches: dict[str, bool]) -> ViewModel:
+        """Replace the chat template's switches, e.g. {"enable_thinking": False}.
+
+        They belong to the request, as the messages do: NVIDIA's request sends
+        them as chat_template_kwargs, and they change the text the template
+        writes.
+        """
         ...
 
     @abstractmethod

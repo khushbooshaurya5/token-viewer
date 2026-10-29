@@ -19,7 +19,7 @@ The docstring under each field becomes its description in OpenAPI, in /docs
 and in the generated TypeScript types.
 """
 
-from typing import Annotated, TypeAlias
+from typing import Annotated, Literal, TypeAlias
 
 from pydantic import AfterValidator, BaseModel, ConfigDict
 
@@ -57,14 +57,29 @@ class TokenView(BaseModel):
     """The vocabulary entry for this ID."""
     text: str
     """The token's text, as the views show it."""
-    # Yours: decide what start and end count, and say so in their docstrings
-    # (README.md, section 6).
     start: int
-    """Where the token begins in the text of its view."""
+    """Where the token begins in the text of its view, in Unicode code points.
+
+    Code points are the unit of a Python str: text[start:end] is the token's
+    span. A token that cuts a character spans that whole character.
+    """
     end: int
-    """Where the token ends in the text of its view."""
+    """Where the token ends in the text of its view, in Unicode code points."""
+    byte_start: int
+    """Where the token's bytes begin in the UTF-8 encoding of the text."""
+    byte_end: int
+    """Where the token's bytes end in the UTF-8 encoding of the text."""
+    bytes: str
+    """The token's UTF-8 bytes, in hex, e.g. "20 F0 9F"."""
     special: bool
-    """Whether the token is a special token."""
+    """Whether the token is a special token, a marker such as <|im_start|>."""
+    added: bool
+    """Whether the token is an added token, outside the merge rules."""
+    partial: bool
+    """Whether the token begins or ends inside a character, e.g. an emoji.
+
+    Its text then shows the bytes of the cut character as ⟨F0 9F⟩.
+    """
 
 
 class TokenizerView(BaseModel):
@@ -110,12 +125,23 @@ class ViewOption(BaseModel):
     """What the view selector shows."""
 
 
-class CaptureView(BaseModel):
-    """A captured provider response.
+class MetadataView(BaseModel):
+    """One piece of a capture's metadata, with where it comes from."""
 
-    A first version with the two texts only. Add the response metadata the
-    task asks for.
-    """
+    model_config = ConfigDict(use_attribute_docstrings=True)
+
+    label: str
+    """What the value is, e.g. "Reported model"."""
+    value: str
+    """The value, as text."""
+    source: Literal["request", "provider", "local"]
+    """Who says so: request is what the laptop sent, provider what the
+    provider's service answered, local what the laptop measured or this
+    viewer reconstructed."""
+
+
+class CaptureView(BaseModel):
+    """A captured provider response."""
 
     model_config = ConfigDict(use_attribute_docstrings=True)
 
@@ -125,7 +151,8 @@ class CaptureView(BaseModel):
     """The answer text, or None if the response has none."""
     reasoning: str | None
     """The reasoning text, or None if the response has none."""
-    # Yours: the response metadata that "4. Captures" on the task sheet lists.
+    metadata: list[MetadataView]
+    """The response metadata, each piece with its source."""
 
 
 class ViewModel(BaseModel):
@@ -139,6 +166,8 @@ class ViewModel(BaseModel):
     """A note the views show above the tokens, or None."""
     messages: list[Message]
     """The chat messages, as set_messages received them."""
+    template_switches: dict[str, bool]
+    """The chat template's switches, e.g. {"enable_thinking": false}."""
     views: list[ViewOption]
     """The views select_view can choose from."""
     current_view: str | None

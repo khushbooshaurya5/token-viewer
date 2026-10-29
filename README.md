@@ -2,15 +2,9 @@
 
 A token viewer for chat requests: given a model on Hugging Face and a list of chat messages, it shows the exact tokens the model reads. It has two views on the same model and controller classes: a page in the browser, written in TypeScript, and a terminal view.
 
-In class, your group presents what it achieved, in 10 minutes: run it from this README, show what works, follow one click through the processes with breakpoints, and show your AI-use log. Before that, replace every _Yours_ line and every "Starter:" note.
-
-Starter: this repository is a shell that runs end to end before any token logic exists: a fake controller answers every command with made-up data. The task is on the [task sheet](https://github.com/L3GJ0N/engineering_agentic_ai_systems_hs_aalen/blob/main/exercises/token_viewer/README.md) in the course repository, and its [samples](https://github.com/L3GJ0N/engineering_agentic_ai_systems_hs_aalen/tree/main/exercises/token_viewer/samples) hold the course request's messages. Everything the task asks for can be done in Python: the page shows whatever the view-model carries. [GUIDE.md](GUIDE.md) says what the starter provides and what is yours, what to try first, how to debug it, and why its versions are pinned. In the code, notes that begin with `Yours:` mark where your work goes.
+For the course request, one user message "Explain tokenization in one sentence." to Nemotron 3.5 Lightning, it shows the known 24 tokens, the same IDs `uv run tokenize-chat` prints in the course repository's `token_lab`. It also handles characters a tokenizer cuts into bytes, such as the emoji 👋🏽, and reads captured provider responses. Built from the [starter](https://github.com/L3GJ0N/eaas_token_viewer_starter) for the [token viewer exercise](https://github.com/L3GJ0N/engineering_agentic_ai_systems_hs_aalen/blob/main/exercises/token_viewer/README.md), as a side project.
 
 ## 1. Run everything
-
-Starter: one member of your group creates the group's own repository from this template, with **Use this template > Create a new repository** on this repository's GitHub page, and adds the others as collaborators. Everyone then clones that repository and works there. [GUIDE.md](GUIDE.md#your-groups-repository) has the steps.
-
-Starter: stuck, or want a guide through this section? [SETUP_PROMPT.md](SETUP_PROMPT.md) holds a prompt for a coding agent that checks your tools and runs these steps with you, without changing any code.
 
 You need four tools:
 
@@ -37,9 +31,23 @@ npm ci
 npm run dev
 ```
 
-Open <http://localhost:5173>. Starter: the page shows the fake controller's made-up tokens; [GUIDE.md](GUIDE.md#try-the-starter) says what to try first.
+Open <http://localhost:5173>. In **Repository** type `nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4`, in **Revision** `bee7596271d1495f6992ae224aefde4410e816b8`, and click **Load model**. The first time, the back end downloads about 17 MB from Hugging Face; from then on it works offline. The page then shows the 24 tokens of the course request.
 
-The terminal view: _yours, the command that starts it._
+The terminal view runs in a process of its own, with its own controller and model. In a third terminal, again in **repository**:
+
+```console
+cd backend
+uv run token-viewer-terminal
+```
+
+It loads the course model at the pinned revision and prints the 24 tokens. `uv run token-viewer-terminal --help` lists the options, for example:
+
+```console
+uv run token-viewer-terminal --select 10
+uv run token-viewer-terminal --text "Hi 👋🏽" --view message-1
+uv run token-viewer-terminal --thinking on
+uv run token-viewer-terminal --capture tests/data/made_up_nvidia_capture.json --view capture-answer
+```
 
 The tests and checks: see [Checks](#checks).
 
@@ -49,55 +57,74 @@ While you develop, the page and the back end run in separate processes:
 
 ```mermaid
 flowchart LR
-    B["Browser: the page"] -->|"HTTP, localhost:5173"| V["Vite dev server: Node.js"]
-    V -->|"/api, 127.0.0.1:8000"| U["uvicorn: routes, controller, model"]
+    B["Browser: the page<br/>(main.ts, api.ts)"] -->|"HTTP, localhost:5173"| V["Vite dev server<br/>Node.js process"]
+    V -->|"proxy: /api → 127.0.0.1:8000"| U["uvicorn: Python process<br/>api.py → ViewerController → TokenModel"]
+    U -->|"load_model, first time only<br/>HTTPS"| H["huggingface.co"]
+    U <-->|"tokenizer.json, chat_template.jinja"| D[("backend/downloads/<br/>owner--name/commit/")]
+    T["Terminal view: its own Python process<br/>terminal.py → ViewerController → TokenModel"] <--> D
 ```
 
 Vite's proxy passes every request under `/api` on to uvicorn, so the page and the API share one origin and need no CORS.
 
-_Yours: complete the map and explain it._ Where do the model's files come from, and when? Where does the terminal view run? Which process holds the state, and what happens to it when uvicorn restarts? Which process does each debugger attach to?
+- **The model's files** come from Hugging Face when the `load_model` command runs, not at start-up: `hub.py` calls `hf_hub_download` for `tokenizer.json`, `chat_template.jinja` and `tokenizer_config.json` (the last two when the repository has them), with no login. They land in `backend/downloads/<owner>--<name>/<commit>/`, and a `files.json` written last marks the folder complete. A commit never changes, so later loads, in either process, read that folder and send no request.
+- **The terminal view** runs in its own Python process, started by `uv run token-viewer-terminal`. It calls `build_controller()` in `wiring.py` just as `api.py` does, so it uses the same classes with its own instance. It sends its commands, prints the last view-model and exits.
+- **The state** lives in the uvicorn process, in the one `TokenModel` that `build_controller()` made: the loaded tokenizer, the messages, the template switches, the capture, the current view and the selection. When uvicorn restarts, all of that is gone and the page shows "No model loaded yet"; the downloaded files stay on disk, so **Load model** is quick and offline again.
+- **The debuggers**: **Back end: uvicorn** attaches debugpy to the uvicorn process, where the route, the controller and the model run. **Front end: integrated browser** attaches to the browser tab that runs the page's TypeScript. No debugger attaches to Vite: it only serves files and forwards `/api`.
 
 ## 3. Debugging
 
 Stop the back end from section 1 by closing its terminal (**Kill Terminal**) or with Ctrl+C in it, and keep Vite running. Then select **Run and Debug**, choose **Full stack: back end + browser** and click **Start Debugging**.
 
-Starter: [GUIDE.md](GUIDE.md#debugging) shows where the first breakpoints go and what **Call Stack**, **Variables** and **Network** show there.
+Follow one click on a token chip from the browser to the model:
 
-_Yours: your breakpoints in the model, where the chat template is rendered and where the text is encoded, and what **Variables** shows there._
+1. `frontend/src/main.ts`, in `chip`, on `void run(() => selectToken(token.index))`: **Variables** shows `token`, the chip's `TokenView`.
+2. `frontend/src/api.ts`, on `if (!response.ok)`: **Network** shows `POST /api/selection` waiting while Python is paused.
+3. `backend/src/token_viewer/api.py`, in the route `select`: `body.index` is the request FastAPI parsed.
+4. `backend/src/token_viewer/viewer_controller.py`, in `select_token`; then `model.py`, in `TokenModel.select`: `self.sequences`, `self.view` and `index`.
+
+For **Load model** or **Set messages**, two more breakpoints in `model.py`:
+
+- In `_render`, on `return environment.from_string(...).render(`: **Variables** shows `messages`, `switches` (`{'enable_thinking': False}`) and `loaded.template`, the template's source. Step over it to see the rendered text.
+- In `_encode`, on `encoding: Encoding = loaded.tokenizer.encode(...)`: `text` is what the template wrote; after the step, `encoding.ids` holds the 24 IDs and `encoding.tokens` the vocabulary entries. In `_describe`, `pieces` holds each token's bytes and `boundaries` where each character begins.
 
 If your code ever reads a key or a Hugging Face token, collapse **Variables** before you share your screen.
 
 ## 4. What works
 
-_Yours: what works, in the order of the task sheet, and the steps that show it._
+1. **The 24 tokens in the terminal view.** `uv run token-viewer-terminal` loads Nemotron's `tokenizer.json` and `chat_template.jinja` at the pinned commit `bee75962…`, renders the template on the course message with `enable_thinking=False` and encodes the text: 24 tokens, the same IDs as `token_lab`, with index, ID, vocabulary entry, text, offsets, the five special tokens marked and the count. The view **message-1** is the text alone: 8 tokens. `tests/test_model.py` checks the IDs against the known list once the files are downloaded.
+2. **The page.** After **Load model** as in section 1, the page shows the same 24 tokens through `ViewerController`; click a chip for its details. The page and the terminal view run in separate processes, each with its own controller and model, built by `build_controller()`.
+3. **The emoji case and the offsets.** Every token has `start` and `end` in code points and `byte_start` and `byte_end` in UTF-8 bytes. Set the messages to `[{"role": "user", "content": "Hi 👋🏽 there"}]` and choose **Message 1 (user), text alone**: Nemotron cuts 👋🏽 into seven tokens. Each is marked `partial`, spans the whole character it cuts, and shows the bytes it carries, such as ` ⟨F0 9F⟩`; `bytes` lists them in hex. In the terminal: `uv run token-viewer-terminal --text "Hi 👋🏽 there" --view message-1`.
+4. **Captures.** **Load capture** reads a file written by `capture-nvidia-response`. The views offer **Captured request, after the chat template**, **Answer, re-tokenized** and, when the response has one, **Reasoning, re-tokenized**, each with a notice that it is a local re-tokenization. **Response metadata** lists the requested and the reported model, the provider, the HTTP status, the finish reason, the usage, the elapsed time and the prompt tokens, local versus reported, each with its source. The course's sample capture is not out yet: `backend/tests/data/made_up_nvidia_capture.json` is a made-up one in the same format, for trying it.
+5. **Optional, partly.** Any public repository with a `tokenizer.json` loads: a branch such as `main` is resolved to its commit first, a template kept in `tokenizer_config.json` is found, and a tokenizer that is not byte-level falls back to the offsets it reports.
 
 ## 5. Architecture
 
 | Role | In this repository | May not |
 |---|---|---|
-| Model | _yours_ | import a view, a UI library or a web framework such as FastAPI |
-| Controller | the interface in `controller.py` and your class; `wiring.py` chooses it | render anything (HTML, terminal output) |
-| View | the page in `frontend/` with its routes in `api.py`; your terminal view | import the tokenizer libraries, contain domain logic |
+| Model | `model.py` (`TokenModel`), `hub.py` (fetching), `capture.py` (reading captures), `course.py` (the course request as data) | import a view, a UI library or a web framework such as FastAPI |
+| Controller | the interface in `controller.py` and `ViewerController` in `viewer_controller.py`; `wiring.py` chooses it | render anything (HTML, terminal output) |
+| View | the page in `frontend/` with its routes in `api.py`; the terminal view in `terminal.py` | import the tokenizer libraries, contain domain logic |
 
-Starter: [GUIDE.md](GUIDE.md#the-contract) explains the contract between the view-models and the page, and the two meanings of model and view.
+[GUIDE.md](GUIDE.md#the-contract) explains the contract between the view-models and the page, and the two meanings of model and view.
 
-_Yours: your view-model, where the state lives, and the change that put the page on your controller: `wiring.py` only, with no change to the model or the controller._
+- **The view-model.** `TokenView` gained `byte_start`, `byte_end`, `bytes`, `added` and `partial`; `ViewModel` gained `template_switches`; `CaptureView` gained `metadata`, a list of `MetadataView` with a label, a value and a source. The page needed no change: it shows further fields of a token in the detail panel, and further fields as JSON. Only `src/schema.d.ts` was regenerated with `npm run types`.
+- **The state** lives in `TokenModel`: the loaded files, the messages, the template switches, the capture, the views computed from them, the current view and the selection. Every operation computes the new views first and assigns everything at once in `_commit`, so a refused operation changes nothing. `ViewerController` holds only a reference to the model.
+- **The switch to the real controller** was one change in `wiring.py`: `FakeController()` became `ViewerController(TokenModel(HubFetcher(DOWNLOADS)))`. The fake stays for the route tests.
 
 ## 6. Decisions
 
-_Yours: short records of your decisions and their reasons: which files and which revision, which libraries, and where your design departs from textbook MVC._
-
-Starter: three questions are left open on purpose. Decide them, and record what you chose and why:
-
-- **Template switches.** No command and no view-model field carries the chat template's switches, such as thinking on or off, although the course request sets one. Where do they belong?
-- **Offsets.** `TokenView.start` and `TokenView.end` do not say what they count. Which unit do you choose?
-- **Capture metadata.** A capture is the file that [capture-nvidia-response](https://github.com/L3GJ0N/engineering_agentic_ai_systems_hs_aalen/tree/main/llm_inference#run-the-project) in the course repository writes. The task lists the metadata a capture should show. Which of them are the provider's statements, and which are your own local reconstruction? How do your views show the difference?
+- **Files and revision.** `nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4`, the variant NVIDIA Build runs, at commit `bee7596271d1495f6992ae224aefde4410e816b8`, the same as `token_lab`. Only `tokenizer.json`, `chat_template.jinja` and, if present, `tokenizer_config.json`: about 17 MB, not the 21.6 GB of weights. A pinned commit gives the same files every time; a branch name is resolved to a commit before downloading, and the page shows the commit.
+- **Libraries.** `tokenizers` to encode, `jinja2` to render the template, `huggingface-hub` to download: the same three as `token_lab`, with the same version ranges. Not `transformers`: its `apply_chat_template` gives the same tokens but hides the steps and is a far larger install. The template runs in Jinja's `ImmutableSandboxedEnvironment` with the settings, the `tojson` filter and the helpers Transformers gives it, because it is code downloaded from the internet.
+- **Template switches** belong to the request, next to the messages: they change the text the template writes, as the messages do. NVIDIA's request sends them as `chat_template_kwargs`. So they live in the model, start as the course request's `{"enable_thinking": false}`, come back in the view-model as `template_switches`, and change with a command of their own, `set_template_switches` (`POST /api/template-switches`, or `--thinking on` in the terminal). A capture keeps the switches its own request sent, and its prompt is rendered with those.
+- **Offsets** count Unicode code points, the unit of a Python `str`: `text[start:end]` is a token's span. A byte-level tokenizer can cut a character into several tokens; code points cannot say where inside the character a cut falls, so such a token spans the whole character, is marked `partial`, and `byte_start` and `byte_end` give its exact place in the UTF-8 bytes. Code points are not the page's unit, UTF-16: an emoji is two UTF-16 units but one code point, so a TypeScript `slice` with these offsets would be wrong for it. The page does not slice the text; it shows `TokenView.text`, which Python builds.
+- **Capture metadata.** Each piece has a source. *request*: what the laptop sent, the requested model, the URL and the template switches. *provider*: what NVIDIA's service answered, the HTTP status, the reported model, the finish reason and the usage with its prompt tokens. *local*: what the laptop measured, the elapsed time and the whole call's time, and what this viewer reconstructs, the provider's name from the URL's host and the prompt tokens counted with the local tokenizer. The views show the source next to each value, and the re-tokenized views say in their notice that they are a reconstruction: the provider returns text, not the token IDs it generated.
+- **Departures from textbook MVC.** The view-model is a snapshot every command returns, not an observer the model notifies: HTTP has no push, and both views simply redraw from it. The routes in `api.py` belong to the page's side of the view but run in the back end's process. The model also does input checks a textbook controller might do, so that the terminal view and the page cannot get different rules.
 
 ## 7. AI use
 
 Every prompt goes into [AI_USAGE.md](AI_USAGE.md). Editor AI suggestions stay off: the workspace switches off VS Code's inline suggestions and Copilot's next edit suggestions, because they write code without a prompt that could go into the log. Chat stays available for questions and hints.
 
-_Yours: two or three representative prompts from the log, what you learned from each, and what you decided yourselves._
+This repository is a side project, not handed in for a grade. Its code was written with Claude (Anthropic), as [AI_USAGE.md](AI_USAGE.md) records.
 
 ## Checks
 
@@ -117,7 +144,7 @@ npm run build
 npm run types:check
 ```
 
-Starter: the route tests send requests to the app inside the test process, against the fake controller, and `test_controller.py` checks the controller interface itself; none of them needs a server or the network.
+The route tests send requests to the app inside the test process, against the fake controller, and `test_controller.py` checks the controller interface itself. `test_model.py` checks the model, the controller and the fetcher with a small tokenizer it trains itself; its three tests with Nemotron's real files run once the files are in `backend/downloads`, after the first `uv run token-viewer-terminal`. None of them needs a server or the network.
 
 `npm run build` type-checks the page with `tsc` and then builds it. `npm run types` and `npm run types:check` read the description of the running back end, so they need a back end started after your last change to the Python code: restart it first. `npm run types:check` fails when `src/schema.d.ts` no longer matches the view-models.
 

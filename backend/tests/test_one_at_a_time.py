@@ -20,6 +20,7 @@ REQUESTS: list[tuple[str, str, dict[str, Any] | None]] = [
     ("GET", "/api/view-model", None),
     ("POST", "/api/model", {"repository": "owner/name", "revision": "main"}),
     ("POST", "/api/messages", {"messages": [{"role": "user", "content": "Hi"}]}),
+    ("POST", "/api/template-switches", {"switches": {"enable_thinking": False}}),
     ("POST", "/api/capture", {"name": "capture.json", "content": "{}"}),
     ("POST", "/api/view", {"key": "text"}),
     ("POST", "/api/selection", {"index": 0}),
