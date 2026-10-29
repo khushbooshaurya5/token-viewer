@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Three token chips in the page's colours, the middle one selected. -->
+  <rect x="1" y="9" width="8" height="14" rx="2" fill="#dbe8ff" stroke="#5a56a1" stroke-width="1.5"/>
+  <rect x="12" y="9" width="8" height="14" rx="2" fill="#5a56a1"/>
+  <rect x="23" y="9" width="8" height="14" rx="2" fill="#dbe8ff" stroke="#5a56a1" stroke-width="1.5"/>
+</svg>

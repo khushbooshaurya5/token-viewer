@@ -1,0 +1,13 @@
+# The back end and the front end have their own .gitignore files. These rules
+# also catch an environment created by mistake in the repository folder.
+.venv/
+node_modules/
+
+# Personal credentials. The token viewer needs none, but never share them.
+.env
+.env.*
+!.env.example
+
+# Operating-system metadata.
+.DS_Store
+Thumbs.db

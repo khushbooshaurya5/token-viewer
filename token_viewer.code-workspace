@@ -1,0 +1,52 @@
+{
+    // Open with File > Open Workspace from File. The back end and the front
+    // end are folders of their own here, so VS Code uses each part's .vscode
+    // folder: its Python environment, tasks and debug configurations.
+    "folders": [
+        { "name": "repository", "path": "." },
+        { "name": "backend", "path": "backend" },
+        { "name": "frontend", "path": "frontend" }
+    ],
+    "settings": {
+        // The parts appear as their own folders above; hide them inside
+        // "repository" so that no file is shown twice.
+        "files.exclude": {
+            "backend": true,
+            "frontend": true
+        },
+        // Lets VS Code offer the page's TypeScript 5.9 (see README.md)
+        // instead of its own.
+        "js/ts.tsdk.path": "frontend/node_modules/typescript/lib",
+        "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+        // Editor AI suggestions are off for this exercise (README.md, section
+        // 7): no inline suggestions from any extension, and no Copilot next
+        // edit suggestions. Chat stays available for questions and hints.
+        "editor.inlineSuggest.enabled": false,
+        "github.copilot.enable": { "*": false },
+        "github.copilot.nextEditSuggestions.enabled": false
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [],
+        // Starts both debuggers with one click. It lives here, not in a
+        // folder's launch.json, because it needs both folders: it works only
+        // when this workspace is open.
+        "compounds": [
+            {
+                "name": "Full stack: back end + browser",
+                "configurations": [
+                    { "folder": "backend", "name": "Back end: uvicorn" },
+                    { "folder": "frontend", "name": "Front end: integrated browser" }
+                ],
+                "stopAll": true
+            }
+        ]
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-python.python",
+            "ms-python.debugpy",
+            "charliermarsh.ruff"
+        ]
+    }
+}

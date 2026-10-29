@@ -1,0 +1,19 @@
+# Local Python environment and caches.
+.venv/
+.uv-cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/
+
+# Personal credentials. This project needs none, but never share them.
+.env
+.env.*
+!.env.example
+
+# Model files downloaded at run time: keep them in downloads/, out of Git.
+downloads/

@@ -1,0 +1,212 @@
+:root {
+  --text: #23253d;
+  --muted: #646b82;
+  --bg: #fbfcff;
+  --surface: #f0f4fb;
+  --line: #d5dced;
+  --accent: #5a56a1;
+  --warn: #fef3c7;
+  --warn-line: #f59e0b;
+  --mono: Consolas, 'Cascadia Mono', Menlo, monospace;
+
+  font: 16px/1.5 Arial, Helvetica, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+h1 {
+  font-size: 28px;
+  margin: 0 0 8px;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 28px 0 10px;
+}
+
+h3 {
+  font-size: 16px;
+  margin: 0 0 6px;
+}
+
+/* hidden must win over any display rule, e.g. display: flex on .status. */
+[hidden] {
+  display: none !important;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.notice {
+  border-left: 4px solid var(--accent);
+  background: #f0eef8;
+  padding: 8px 14px;
+}
+
+.status {
+  border: 1.5px solid var(--warn-line);
+  background: var(--warn);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+pre {
+  font: 14px/1.6 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+  min-height: 1.6em;
+}
+
+.commands {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.commands form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid #a8b0c1;
+  border-radius: 4px;
+  background: #fff;
+}
+
+textarea {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+label input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(240px, 2fr);
+  gap: 20px;
+}
+
+#tokens {
+  font: 16px/2.2 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-height: 80px;
+}
+
+.chip {
+  background: #dbe8ff;
+  border-radius: 3px;
+  margin-right: 2px;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+/* An empty chip keeps a width, so that every token stays visible and can be
+   clicked. */
+.chip:empty {
+  padding: 2px 0.3em;
+}
+
+.chip.special {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  font-weight: bold;
+}
+
+.chip.selected {
+  background: var(--accent);
+  color: #fff;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+details,
+#capture-more {
+  margin-top: 16px;
+}
+
+summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.scroll {
+  max-height: 380px;
+  overflow: auto;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: #eef1f7;
+}
+
+td {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
+}
+
+tbody tr {
+  cursor: pointer;
+}
+
+tr.selected td {
+  background: #f0eef8;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

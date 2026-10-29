@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Token viewer</title>
+  </head>
+  <body>
+    <main>
+      <h1>Token viewer</h1>
+      <p class="muted" id="tokenizer"></p>
+      <p class="notice" id="notice" hidden></p>
+      <div role="status">
+        <p class="status" id="status" hidden>
+          <span id="status-text"></span>
+          <button type="button" id="retry" hidden>Retry</button>
+        </p>
+      </div>
+
+      <section class="commands" aria-label="Commands">
+        <form class="surface" id="model-form">
+          <label>Repository <input id="repository" required /></label>
+          <label>Revision <input id="revision" required /></label>
+          <button type="submit">Load model</button>
+        </form>
+        <form class="surface" id="messages-form">
+          <label for="messages-input">Messages as JSON</label>
+          <textarea id="messages-input" rows="5" spellcheck="false"></textarea>
+          <button type="submit">Set messages</button>
+        </form>
+        <form class="surface" id="capture-form">
+          <label>
+            Capture file
+            <input id="capture-file" type="file" accept=".json,application/json" />
+          </label>
+          <button type="submit">Load capture</button>
+        </form>
+      </section>
+
+      <h2>Messages</h2>
+      <pre class="surface" id="messages"></pre>
+
+      <section id="more" hidden>
+        <h2>More from the view-model</h2>
+        <p class="muted">Every further field of the view-model, as JSON.</p>
+        <pre class="surface" id="more-text"></pre>
+      </section>
+
+      <h2>Token boundaries</h2>
+      <div class="row">
+        <label for="view">View</label>
+        <select id="view"></select>
+        <span class="muted" id="count"></span>
+      </div>
+      <div class="grid">
+        <div class="surface" id="tokens"></div>
+        <div>
+          <strong>Selected token</strong>
+          <pre class="surface" id="detail"></pre>
+        </div>
+      </div>
+      <details>
+        <summary>All tokens of this view</summary>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>ID</th>
+                <th>Piece</th>
+                <th>Text</th>
+                <th>Start–end</th>
+                <th>Special</th>
+              </tr>
+            </thead>
+            <tbody id="table"></tbody>
+          </table>
+        </div>
+      </details>
+      <details>
+        <summary>Text of this view</summary>
+        <pre class="surface" id="view-text"></pre>
+      </details>
+
+      <h2>Provider response</h2>
+      <p class="muted" id="capture-status"></p>
+      <div class="grid">
+        <div>
+          <h3>Answer</h3>
+          <pre class="surface" id="answer"></pre>
+        </div>
+        <div>
+          <h3>Reasoning</h3>
+          <pre class="surface" id="reasoning"></pre>
+        </div>
+      </div>
+      <div id="capture-more" hidden>
+        <h3>Response metadata</h3>
+        <pre class="surface" id="capture-more-text"></pre>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
